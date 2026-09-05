@@ -25,26 +25,33 @@ const pool = new Pool({
 });
 
 // Test route
-app.get("/", (req, res) => {
-  res.json({
-    message: "Reflex API is running",
-  });
-});
-
-// Test database connection
 app.get("/api/test-db", async (req, res) => {
   try {
-    const result = await pool.query("SELECT NOW()");
+    const dbInfo = await pool.query(`
+      SELECT
+        current_database() AS database,
+        current_user AS user,
+        current_schema() AS schema
+    `);
+
+    const tables = await pool.query(`
+      SELECT table_schema, table_name
+      FROM information_schema.tables
+      WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+      ORDER BY table_schema, table_name
+    `);
 
     res.json({
       message: "Database connected successfully",
-      time: result.rows[0].now,
+      database_info: dbInfo.rows[0],
+      tables: tables.rows,
     });
   } catch (error) {
     console.error("Database connection error:", error);
 
     res.status(500).json({
       message: "Database connection failed",
+      error: error.message,
     });
   }
 });
