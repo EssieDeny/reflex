@@ -18,9 +18,10 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: Number(process.env.DB_PORT),
-  ssl: process.env.NODE_ENV === "production"
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
 });
 
 // Test route
@@ -61,7 +62,7 @@ app.post("/api/login", async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT id, name, email, role, password
-       FROM users
+       FROM public.users
        WHERE email = $1`,
       [email]
     );
@@ -105,7 +106,7 @@ app.get("/api/riders", async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT id, name, email
-       FROM users
+       FROM public.users
        WHERE role = 'Rider'
        ORDER BY name`
     );
@@ -130,7 +131,7 @@ app.get("/api/deliveries", async (req, res) => {
     if (rider_id) {
       result = await pool.query(
         `SELECT *
-         FROM deliveries
+         FROM public.deliveries
          WHERE rider_id = $1
          ORDER BY id DESC`,
         [rider_id]
@@ -138,7 +139,7 @@ app.get("/api/deliveries", async (req, res) => {
     } else {
       result = await pool.query(
         `SELECT *
-         FROM deliveries
+         FROM public.deliveries
          ORDER BY id DESC`
       );
     }
@@ -175,7 +176,7 @@ app.post("/api/deliveries", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `INSERT INTO deliveries
+      `INSERT INTO public.deliveries
        (customer_name, customer_phone, delivery_address, item_description, status)
        VALUES ($1, $2, $3, $4, 'Pending')
        RETURNING *`,
@@ -211,7 +212,7 @@ app.patch("/api/deliveries/:id/assign", async (req, res) => {
   try {
     const riderResult = await pool.query(
       `SELECT id, name
-       FROM users
+       FROM public.users
        WHERE id = $1
        AND role = 'Rider'`,
       [rider_id]
@@ -226,7 +227,7 @@ app.patch("/api/deliveries/:id/assign", async (req, res) => {
     const rider = riderResult.rows[0];
 
     const result = await pool.query(
-      `UPDATE deliveries
+      `UPDATE public.deliveries
        SET rider_id = $1,
            rider_name = $2,
            status = 'Assigned'
@@ -258,7 +259,7 @@ app.patch("/api/deliveries/:id/pickup", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `UPDATE deliveries
+      `UPDATE public.deliveries
        SET status = 'Picked Up'
        WHERE id = $1
        AND status = 'Assigned'
@@ -288,7 +289,7 @@ app.patch("/api/deliveries/:id/deliver", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `UPDATE deliveries
+      `UPDATE public.deliveries
        SET status = 'Delivered'
        WHERE id = $1
        AND status = 'Picked Up'
@@ -318,7 +319,7 @@ app.delete("/api/deliveries/:id", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `DELETE FROM deliveries
+      `DELETE FROM public.deliveries
        WHERE id = $1
        RETURNING *`,
       [id]
