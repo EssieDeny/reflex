@@ -29,17 +29,20 @@ app.get("/api/test-db", async (req, res) => {
   try {
     const dbInfo = await pool.query(`
       SELECT
-        current_database() AS database,
-        current_user AS user,
-        current_schema() AS schema
+  current_database() AS database,
+  current_user AS user,
+  current_schema() AS schema,
+  inet_server_addr() AS server_ip,
+  inet_server_port() AS server_port,
+  version() AS version
     `);
 
     const tables = await pool.query(`
-      SELECT table_schema, table_name
-      FROM information_schema.tables
-      WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
-      ORDER BY table_schema, table_name
-    `);
+  SELECT schemaname, tablename, tableowner
+  FROM pg_catalog.pg_tables
+  WHERE schemaname = 'public'
+  ORDER BY tablename
+`);
 
     res.json({
       message: "Database connected successfully",
